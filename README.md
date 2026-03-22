@@ -13,6 +13,9 @@
 
 ## What is this?
 
+![Screenshot](SCREEN.png)
+
+
 **nanobot-web** is a fork of [nanobot](https://github.com/HKUDS/nanobot) rebuilt for **solo / personal use** with a **React + Tailwind Web UI**. All multi-user infrastructure (PostgreSQL, Redis, JWT auth) has been removed — data is stored in simple JSON/JSONL/Markdown files on disk, just like the original nanobot.
 
 ## Architecture
