@@ -332,6 +332,25 @@ def _make_provider(config: Config):
     # Azure OpenAI: direct Azure OpenAI endpoint with deployment name
     elif provider_name == "azure_openai":
         if not p or not p.api_key or not p.api_base:
+            missing = []
+            if not p or not p.api_key:
+                missing.append("api_key")
+            if not p or not p.api_base:
+                missing.append("api_base")
+            lines = [
+                "",
+                f"  \u274c Azure OpenAI requires: {', '.join(missing)}",
+                "",
+                "  Fix:",
+                "",
+            ]
+            if "api_key" in missing:
+                lines.append('    nanobot-web config set providers.azure_openai.api_key "YOUR_KEY"')
+            if "api_base" in missing:
+                lines.append('    nanobot-web config set providers.azure_openai.api_base "https://YOUR_RESOURCE.openai.azure.com"')
+            lines += ["", "  Then re-run:  nanobot-web web", ""]
+            import sys
+            sys.stderr.write("\n".join(lines) + "\n")
             raise HTTPException(
                 status_code=400,
                 detail="Azure OpenAI requires api_key and api_base under providers.azure_openai",
@@ -348,6 +367,25 @@ def _make_provider(config: Config):
         import os
         has_env_key = spec and spec.env_key and os.environ.get(spec.env_key)
         if not model.startswith("bedrock/") and not (p and p.api_key) and not has_env_key and not (spec and (spec.is_oauth or spec.is_local)):
+            display = (spec.display_name or provider_name) if spec else provider_name
+            env_hint = spec.env_key if spec else None
+            lines = [
+                "",
+                f"  \u274c No API key configured for provider '{display}' (model: {model})",
+                "",
+                "  Fix with ONE of these options:",
+                "",
+                f"    1. nanobot-web config set providers.{provider_name}.api_key \"YOUR_KEY\"",
+            ]
+            if env_hint:
+                lines.append(f"    2. export {env_hint}=\"YOUR_KEY\"")
+            lines += [
+                "",
+                "  Then re-run:  nanobot-web web",
+                "",
+            ]
+            import sys
+            sys.stderr.write("\n".join(lines) + "\n")
             raise HTTPException(status_code=400, detail="No API key configured for selected model/provider")
         provider = LiteLLMProvider(
             api_key=p.api_key if p else None,
