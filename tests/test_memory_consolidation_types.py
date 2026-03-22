@@ -11,8 +11,8 @@ from unittest.mock import AsyncMock
 
 import pytest
 
-from nanobot.agent.memory import MemoryStore
-from nanobot.providers.base import LLMProvider, LLMResponse, ToolCallRequest
+from nanobot_web.agent.memory import MemoryStore
+from nanobot_web.providers.base import LLMProvider, LLMResponse, ToolCallRequest
 
 
 def _make_messages(message_count: int = 30):
@@ -258,7 +258,7 @@ class TestMemoryConsolidationTypeHandling:
         async def _fake_sleep(delay: int) -> None:
             delays.append(delay)
 
-        monkeypatch.setattr("nanobot.providers.base.asyncio.sleep", _fake_sleep)
+        monkeypatch.setattr("nanobot_web.providers.base.asyncio.sleep", _fake_sleep)
 
         result = await store.consolidate(messages, provider, "test-model")
 

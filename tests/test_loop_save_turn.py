@@ -1,6 +1,6 @@
-from nanobot.agent.context import ContextBuilder
-from nanobot.agent.loop import AgentLoop
-from nanobot.session.manager import Session
+from nanobot_web.agent.context import ContextBuilder
+from nanobot_web.agent.loop import AgentLoop
+from nanobot_web.session.manager import Session
 
 
 def _mk_loop() -> AgentLoop:

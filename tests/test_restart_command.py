@@ -7,13 +7,13 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from nanobot.bus.events import InboundMessage
+from nanobot_web.bus.events import InboundMessage
 
 
 def _make_loop():
     """Create a minimal AgentLoop with mocked dependencies."""
-    from nanobot.agent.loop import AgentLoop
-    from nanobot.bus.queue import MessageBus
+    from nanobot_web.agent.loop import AgentLoop
+    from nanobot_web.bus.queue import MessageBus
 
     bus = MessageBus()
     provider = MagicMock()
@@ -21,9 +21,9 @@ def _make_loop():
     workspace = MagicMock()
     workspace.__truediv__ = MagicMock(return_value=MagicMock())
 
-    with patch("nanobot.agent.loop.ContextBuilder"), \
-         patch("nanobot.agent.loop.SessionManager"), \
-         patch("nanobot.agent.loop.SubagentManager"):
+    with patch("nanobot_web.agent.loop.ContextBuilder"), \
+         patch("nanobot_web.agent.loop.SessionManager"), \
+         patch("nanobot_web.agent.loop.SubagentManager"):
         loop = AgentLoop(bus=bus, provider=provider, workspace=workspace)
     return loop, bus
 
@@ -35,7 +35,7 @@ class TestRestartCommand:
         loop, bus = _make_loop()
         msg = InboundMessage(channel="cli", sender_id="user", chat_id="direct", content="/restart")
 
-        with patch("nanobot.agent.loop.os.execv") as mock_execv:
+        with patch("nanobot_web.agent.loop.os.execv") as mock_execv:
             await loop._handle_restart(msg)
             out = await asyncio.wait_for(bus.consume_outbound(), timeout=1.0)
             assert "Restarting" in out.content

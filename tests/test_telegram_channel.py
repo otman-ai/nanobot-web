@@ -5,10 +5,10 @@ from unittest.mock import AsyncMock
 
 import pytest
 
-from nanobot.bus.events import OutboundMessage
-from nanobot.bus.queue import MessageBus
-from nanobot.channels.telegram import TELEGRAM_REPLY_CONTEXT_MAX_LEN, TelegramChannel
-from nanobot.config.schema import TelegramConfig
+from nanobot_web.bus.events import OutboundMessage
+from nanobot_web.bus.queue import MessageBus
+from nanobot_web.channels.telegram import TELEGRAM_REPLY_CONTEXT_MAX_LEN, TelegramChannel
+from nanobot_web.config.schema import TelegramConfig
 
 
 class _FakeHTTPXRequest:
@@ -34,7 +34,7 @@ class _FakeBot:
 
     async def get_me(self):
         self.get_me_calls += 1
-        return SimpleNamespace(id=999, username="nanobot_test")
+        return SimpleNamespace(id=999, username="epicbott_test")
 
     async def set_my_commands(self, commands) -> None:
         self.commands = commands
@@ -143,9 +143,9 @@ async def test_start_uses_request_proxy_without_builder_proxy(monkeypatch) -> No
     app = _FakeApp(lambda: setattr(channel, "_running", False))
     builder = _FakeBuilder(app)
 
-    monkeypatch.setattr("nanobot.channels.telegram.HTTPXRequest", _FakeHTTPXRequest)
+    monkeypatch.setattr("nanobot_web.channels.telegram.HTTPXRequest", _FakeHTTPXRequest)
     monkeypatch.setattr(
-        "nanobot.channels.telegram.Application",
+        "nanobot_web.channels.telegram.Application",
         SimpleNamespace(builder=lambda: builder),
     )
 
@@ -270,8 +270,8 @@ async def test_group_policy_mention_accepts_text_mention_and_caches_bot_identity
     channel._start_typing = lambda _chat_id: None
 
     mention = SimpleNamespace(type="mention", offset=0, length=13)
-    await channel._on_message(_make_telegram_update(text="@nanobot_test hi", entities=[mention]), None)
-    await channel._on_message(_make_telegram_update(text="@nanobot_test again", entities=[mention]), None)
+    await channel._on_message(_make_telegram_update(text="@epicbott_test hi", entities=[mention]), None)
+    await channel._on_message(_make_telegram_update(text="@epicbott_test again", entities=[mention]), None)
 
     assert len(handled) == 2
     assert channel._app.bot.get_me_calls == 1
@@ -295,12 +295,12 @@ async def test_group_policy_mention_accepts_caption_mention() -> None:
 
     mention = SimpleNamespace(type="mention", offset=0, length=13)
     await channel._on_message(
-        _make_telegram_update(caption="@nanobot_test photo", caption_entities=[mention]),
+        _make_telegram_update(caption="@epicbott_test photo", caption_entities=[mention]),
         None,
     )
 
     assert len(handled) == 1
-    assert handled[0]["content"] == "@nanobot_test photo"
+    assert handled[0]["content"] == "@epicbott_test photo"
 
 
 @pytest.mark.asyncio
@@ -417,7 +417,7 @@ async def test_download_message_media_returns_path_when_download_succeeds(
     media_dir = tmp_path / "media" / "telegram"
     media_dir.mkdir(parents=True)
     monkeypatch.setattr(
-        "nanobot.channels.telegram.get_media_dir",
+        "nanobot_web.channels.telegram.get_media_dir",
         lambda channel=None: media_dir if channel else tmp_path / "media",
     )
 
@@ -452,7 +452,7 @@ async def test_on_message_attaches_reply_to_media_when_available(monkeypatch, tm
     media_dir = tmp_path / "media" / "telegram"
     media_dir.mkdir(parents=True)
     monkeypatch.setattr(
-        "nanobot.channels.telegram.get_media_dir",
+        "nanobot_web.channels.telegram.get_media_dir",
         lambda channel=None: media_dir if channel else tmp_path / "media",
     )
 
@@ -535,7 +535,7 @@ async def test_on_message_reply_to_caption_and_media(monkeypatch, tmp_path) -> N
     media_dir = tmp_path / "media" / "telegram"
     media_dir.mkdir(parents=True)
     monkeypatch.setattr(
-        "nanobot.channels.telegram.get_media_dir",
+        "nanobot_web.channels.telegram.get_media_dir",
         lambda channel=None: media_dir if channel else tmp_path / "media",
     )
 

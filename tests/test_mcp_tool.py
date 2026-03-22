@@ -6,7 +6,7 @@ from types import ModuleType, SimpleNamespace
 
 import pytest
 
-from nanobot.agent.tools.mcp import MCPToolWrapper
+from nanobot_web.agent.tools.mcp import MCPToolWrapper
 
 
 class _FakeTextContent:

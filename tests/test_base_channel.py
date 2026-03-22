@@ -1,8 +1,8 @@
 from types import SimpleNamespace
 
-from nanobot.bus.events import OutboundMessage
-from nanobot.bus.queue import MessageBus
-from nanobot.channels.base import BaseChannel
+from nanobot_web.bus.events import OutboundMessage
+from nanobot_web.bus.queue import MessageBus
+from nanobot_web.channels.base import BaseChannel
 
 
 class _DummyChannel(BaseChannel):

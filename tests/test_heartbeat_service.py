@@ -2,8 +2,8 @@ import asyncio
 
 import pytest
 
-from nanobot.heartbeat.service import HeartbeatService
-from nanobot.providers.base import LLMProvider, LLMResponse, ToolCallRequest
+from nanobot_web.heartbeat.service import HeartbeatService
+from nanobot_web.providers.base import LLMProvider, LLMResponse, ToolCallRequest
 
 
 class DummyProvider(LLMProvider):

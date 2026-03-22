@@ -2,7 +2,7 @@
 
 import pytest
 
-from nanobot.agent.tools.filesystem import (
+from nanobot_web.agent.tools.filesystem import (
     EditFileTool,
     ListDirTool,
     ReadFileTool,

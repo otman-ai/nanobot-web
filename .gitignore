@@ -1,6 +1,8 @@
 .worktrees/
 .assets
 .env
+.env.*
+!.env.example
 *.pyc
 dist/
 build/
@@ -17,8 +19,13 @@ docs/
 .venv/
 venv/
 __pycache__/
+node_modules/
 poetry.lock
 .pytest_cache/
 botpy.log
 nano.*.save
+config.json
+*.pem
+*.key
+*.cert
 

@@ -4,8 +4,8 @@ from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
 
-from nanobot.providers.azure_openai_provider import AzureOpenAIProvider
-from nanobot.providers.base import LLMResponse
+from nanobot_web.providers.azure_openai_provider import AzureOpenAIProvider
+from nanobot_web.providers.base import LLMResponse
 
 
 def test_azure_openai_provider_init():

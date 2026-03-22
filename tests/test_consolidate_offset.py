@@ -5,7 +5,7 @@ from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 from pathlib import Path
-from nanobot.session.manager import Session, SessionManager
+from nanobot_web.session.manager import Session, SessionManager
 
 # Test constants
 MEMORY_WINDOW = 50
@@ -485,9 +485,9 @@ class TestNewCommandArchival:
 
     @staticmethod
     def _make_loop(tmp_path: Path):
-        from nanobot.agent.loop import AgentLoop
-        from nanobot.bus.queue import MessageBus
-        from nanobot.providers.base import LLMResponse
+        from nanobot_web.agent.loop import AgentLoop
+        from nanobot_web.bus.queue import MessageBus
+        from nanobot_web.providers.base import LLMResponse
 
         bus = MessageBus()
         provider = MagicMock()
@@ -506,7 +506,7 @@ class TestNewCommandArchival:
 
     @pytest.mark.asyncio
     async def test_new_does_not_clear_session_when_archive_fails(self, tmp_path: Path) -> None:
-        from nanobot.bus.events import InboundMessage
+        from nanobot_web.bus.events import InboundMessage
 
         loop = self._make_loop(tmp_path)
         session = loop.sessions.get_or_create("cli:test")
@@ -530,7 +530,7 @@ class TestNewCommandArchival:
 
     @pytest.mark.asyncio
     async def test_new_archives_only_unconsolidated_messages(self, tmp_path: Path) -> None:
-        from nanobot.bus.events import InboundMessage
+        from nanobot_web.bus.events import InboundMessage
 
         loop = self._make_loop(tmp_path)
         session = loop.sessions.get_or_create("cli:test")
@@ -558,7 +558,7 @@ class TestNewCommandArchival:
 
     @pytest.mark.asyncio
     async def test_new_clears_session_and_responds(self, tmp_path: Path) -> None:
-        from nanobot.bus.events import InboundMessage
+        from nanobot_web.bus.events import InboundMessage
 
         loop = self._make_loop(tmp_path)
         session = loop.sessions.get_or_create("cli:test")

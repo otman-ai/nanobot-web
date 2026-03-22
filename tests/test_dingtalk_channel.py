@@ -3,10 +3,10 @@ from types import SimpleNamespace
 
 import pytest
 
-from nanobot.bus.queue import MessageBus
-import nanobot.channels.dingtalk as dingtalk_module
-from nanobot.channels.dingtalk import DingTalkChannel, NanobotDingTalkHandler
-from nanobot.config.schema import DingTalkConfig
+from nanobot_web.bus.queue import MessageBus
+import nanobot_web.channels.dingtalk as dingtalk_module
+from nanobot_web.channels.dingtalk import DingTalkChannel, EpicbottDingTalkHandler
+from nanobot_web.config.schema import DingTalkConfig
 
 
 class _FakeResponse:
@@ -58,7 +58,7 @@ async def test_group_send_uses_group_messages_api() -> None:
         "token",
         "group:conv123",
         "sampleMarkdown",
-        {"text": "hello", "title": "Nanobot Reply"},
+        {"text": "hello", "title": "Epicbott Reply"},
     )
 
     assert ok is True
@@ -75,7 +75,7 @@ async def test_handler_uses_voice_recognition_text_when_text_is_empty(monkeypatc
         DingTalkConfig(client_id="app", client_secret="secret", allow_from=["user1"]),
         bus,
     )
-    handler = NanobotDingTalkHandler(channel)
+    handler = EpicbottDingTalkHandler(channel)
 
     class _FakeChatbotMessage:
         text = None

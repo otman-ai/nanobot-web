@@ -3,10 +3,10 @@
 Feishu cards reject messages that contain more than one table element
 (API error 11310: card table number over limit).  The helper splits a flat
 list of card elements into groups so that each group contains at most one
-table, allowing nanobot to send multiple cards instead of failing.
+table, allowing nanobot-web to send multiple cards instead of failing.
 """
 
-from nanobot.channels.feishu import FeishuChannel
+from nanobot_web.channels.feishu import FeishuChannel
 
 
 def _md(text: str) -> dict:

@@ -2,17 +2,34 @@ x-common-config: &common-config
   build:
     context: .
     dockerfile: Dockerfile
+  environment:
+    - OPENAI_API_KEY=${OPENAI_API_KEY}
+    - COMPOSIO_API_KEY=${COMPOSIO_API_KEY}
   volumes:
-    - ~/.nanobot:/root/.nanobot
+    - workspace:/root/.nanobot-web
 
 services:
-  nanobot-gateway:
-    container_name: nanobot-gateway
+  nanobot-web:
+    container_name: nanobot-web
+    <<: *common-config
+    command: ["web", "--host", "0.0.0.0", "--port", "18790"]
+    restart: unless-stopped
+    ports:
+      - "18790:18790"
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 2G
+        reservations:
+          cpus: '0.5'
+          memory: 512M
+
+  nanobot-web-gateway:
+    container_name: nanobot-web-gateway
     <<: *common-config
     command: ["gateway"]
     restart: unless-stopped
-    ports:
-      - 18790:18790
     deploy:
       resources:
         limits:
@@ -21,11 +38,6 @@ services:
         reservations:
           cpus: '0.25'
           memory: 256M
-  
-  nanobot-cli:
-    <<: *common-config
-    profiles:
-      - cli
-    command: ["status"]
-    stdin_open: true
-    tty: true
+
+volumes:
+  workspace:
