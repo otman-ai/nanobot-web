@@ -256,6 +256,7 @@ def onboard(
         return answer in ("y", "yes")
 
     config_path = get_config_path()
+    is_fresh = not config_path.exists()
 
     if config_path.exists():
         console.print(f"[dim]Config found at {config_path} — keeping existing values, adding new fields.[/dim]")
@@ -263,6 +264,7 @@ def onboard(
         if overwrite:
             config = Config()
             save_config(config)
+            is_fresh = True  # Treat reset as fresh install — run wizard
             console.print(f"[green]✓[/green] Config reset to defaults at {config_path}")
         else:
             config = load_config()
@@ -283,7 +285,8 @@ def onboard(
 
     sync_workspace_templates(workspace)
 
-    if not skip_wizard and _has_tty():
+    # Only run wizard on fresh install or reset — not on update
+    if is_fresh and not skip_wizard and _has_tty():
         from nanobot_web.cli.wizard import apply_wizard_to_config, generate_user_md, run_wizard
 
         config = load_config()
