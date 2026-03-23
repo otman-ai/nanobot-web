@@ -156,40 +156,114 @@ class IntegrationsActionsTool(Tool):
         "Search for available actions on a connected integration. "
         "Returns action names with their descriptions and required parameters. "
         "Always use this before integrations_execute to find the correct action "
-        "and know exactly what parameters to pass."
+        "and know exactly what parameters to pass. "
+        "Specify the 'app' parameter to search within a specific integration (recommended)."
     )
     parameters = {
         "type": "object",
         "properties": {
             "query": {
                 "type": "string",
-                "description": "Describe what you want to do, e.g. 'send email gmail', 'read notion page', 'create github issue'",
+                "description": "Describe what you want to do, e.g. 'send email', 'read messages', 'create issue'",
+            },
+            "app": {
+                "type": "string",
+                "description": "The app to search within, e.g. 'gmail', 'github', 'googlecalendar', 'slack', 'notion'. Highly recommended to narrow results.",
             },
         },
         "required": ["query"],
     }
 
-    async def execute(self, query: str, **kwargs: Any) -> str:
+    # Known app name aliases to help match user intent
+    _APP_ALIASES = {
+        "email": "gmail", "mail": "gmail", "google mail": "gmail",
+        "calendar": "googlecalendar", "gcal": "googlecalendar", "google calendar": "googlecalendar",
+        "drive": "googledrive", "google drive": "googledrive",
+        "gh": "github",
+    }
+
+    def _detect_app(self, query: str) -> tuple[str | None, str]:
+        """Try to extract an app name from the query. Returns (app, cleaned_query)."""
+        query_lower = query.lower().strip()
+
+        # Check aliases first
+        for alias, app in self._APP_ALIASES.items():
+            if alias in query_lower:
+                cleaned = query_lower.replace(alias, "").strip()
+                return app, cleaned or query
+
+        # Check known app names directly
+        known_apps = [
+            "gmail", "googlecalendar", "googledrive", "outlook", "notion",
+            "slack", "github", "monday", "shopify", "hubspot", "twitter",
+            "discord", "trello", "jira", "linear", "airtable",
+        ]
+        for app in known_apps:
+            if app in query_lower:
+                cleaned = query_lower.replace(app, "").strip()
+                return app, cleaned or query
+
+        return None, query
+
+    async def execute(self, query: str, app: str | None = None, **kwargs: Any) -> str:
         try:
             toolset = _get_toolset()
-            actions = toolset.find_actions_by_use_case(
-                use_case=query.strip(),
-            )
+
+            # Auto-detect app from query if not explicitly provided
+            detected_app = None
+            search_query = query.strip()
+            if app:
+                detected_app = app.lower().strip()
+            else:
+                detected_app, search_query = self._detect_app(query)
+
+            if detected_app:
+                actions = toolset.find_actions_by_use_case(
+                    detected_app,
+                    use_case=search_query,
+                )
+            else:
+                actions = toolset.find_actions_by_use_case(
+                    use_case=search_query,
+                )
         except Exception as e:
             return json.dumps({"error": str(e)})
 
         if not actions:
-            return f"No actions found for query '{query}'. Try a different search query or check integrations_list."
+            hint = f" for app '{detected_app}'" if detected_app else ""
+            return (
+                f"No actions found{hint} matching '{query}'. "
+                "Try a broader query, or check integrations_list to verify the integration is connected."
+            )
 
-        lines = [f"Actions matching '{query}':\n"]
-        for action in actions[:8]:
+        # Get full action schemas for detailed parameter info
+        try:
+            schemas = toolset.get_action_schemas(actions=actions[:10])
+        except Exception:
+            schemas = []
+
+        # Build a lookup from schema name to schema
+        schema_map = {}
+        for s in schemas:
+            s_name = getattr(s, "name", None) or ""
+            schema_map[s_name] = s
+
+        app_label = f" ({detected_app})" if detected_app else ""
+        lines = [f"Actions matching '{query}'{app_label}:\n"]
+        for action in actions[:10]:
             name = getattr(action, "name", str(action))
-            desc = getattr(action, "description", "")
+            schema = schema_map.get(name)
+            desc = getattr(schema, "description", None) or getattr(action, "description", "")
             lines.append(f"## {name}")
             if desc:
                 lines.append(f"Description: {desc}")
 
-            params = getattr(action, "parameters", None) or getattr(action, "input_parameters", None)
+            params = None
+            if schema:
+                params = getattr(schema, "parameters", None) or getattr(schema, "input_parameters", None)
+            if not params:
+                params = getattr(action, "parameters", None) or getattr(action, "input_parameters", None)
+
             if params and isinstance(params, dict) and params.get("properties"):
                 props = params["properties"]
                 required = params.get("required", [])
