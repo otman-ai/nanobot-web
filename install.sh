@@ -96,31 +96,21 @@ install_python() {
             if version_ge "$PY_VER" "3.11"; then
                 PYTHON_CMD="$cmd"
                 success "Found $cmd (Python $PY_VER)"
-                # Ensure venv module (with ensurepip) is available.
-                # `venv --help` can succeed on Debian even without ensurepip,
-                # so we test by actually creating a throwaway venv.
-                _test_venv="/tmp/_nanobot_venv_test_$$"
-                rm -rf "$_test_venv"
-                if ! $PYTHON_CMD -m venv "$_test_venv" &>/dev/null; then
-                    rm -rf "$_test_venv"
-                    info "venv/ensurepip not available — installing..."
-                    case "$PKG_MGR" in
-                        apt)
+                # On Debian/Ubuntu, always install the venv package proactively.
+                # The system Python often ships without ensurepip, and detection
+                # tricks (--help, test venv) are unreliable across distros.
+                case "$PKG_MGR" in
+                    apt)
+                        if ! dpkg -s "python${PY_VER}-venv" &>/dev/null; then
+                            info "Installing python${PY_VER}-venv..."
                             $SUDO apt-get update -qq
                             $SUDO apt-get install -y "python${PY_VER}-venv" 2>/dev/null \
-                                || $SUDO apt-get install -y python3-venv
-                            ;;
-                        dnf)    $SUDO dnf install -y "python${PY_VER/.*/}-libs" 2>/dev/null || true ;;
-                        zypper) $SUDO zypper install -y "python${PY_VER/.*/}-base" 2>/dev/null || true ;;
-                        apk)    $SUDO apk add python3 2>/dev/null || true ;;
-                    esac
-                    if ! $PYTHON_CMD -m venv "$_test_venv" &>/dev/null; then
-                        rm -rf "$_test_venv"
-                        error "Failed to install python venv module. Please run: $SUDO apt install python${PY_VER}-venv"
-                    fi
-                    success "venv module installed"
-                fi
-                rm -rf "$_test_venv"
+                                || $SUDO apt-get install -y python3-venv \
+                                || error "Failed to install python venv. Run: $SUDO apt install python${PY_VER}-venv"
+                            success "venv module installed"
+                        fi
+                        ;;
+                esac
                 return
             fi
         fi
@@ -307,9 +297,11 @@ setup_python_env() {
     step "Setting up Python environment"
 
     VENV_DIR="$REPO_DIR/venv"
-    if [ -d "$VENV_DIR" ] && [ -f "$VENV_DIR/bin/activate" ]; then
+    if [ -d "$VENV_DIR" ] && [ -f "$VENV_DIR/bin/activate" ] && [ -f "$VENV_DIR/bin/pip" ]; then
         info "Existing venv found — reusing it"
     else
+        # Remove broken/incomplete venv from a previous failed attempt
+        [ -d "$VENV_DIR" ] && rm -rf "$VENV_DIR"
         info "Creating virtual environment..."
         $PYTHON_CMD -m venv "$VENV_DIR"
     fi
