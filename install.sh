@@ -96,9 +96,14 @@ install_python() {
             if version_ge "$PY_VER" "3.11"; then
                 PYTHON_CMD="$cmd"
                 success "Found $cmd (Python $PY_VER)"
-                # Ensure venv module is available (may not be installed by default)
-                if ! $PYTHON_CMD -m venv --help &>/dev/null; then
-                    info "venv module not found — installing..."
+                # Ensure venv module (with ensurepip) is available.
+                # `venv --help` can succeed on Debian even without ensurepip,
+                # so we test by actually creating a throwaway venv.
+                _test_venv="/tmp/_nanobot_venv_test_$$"
+                rm -rf "$_test_venv"
+                if ! $PYTHON_CMD -m venv "$_test_venv" &>/dev/null; then
+                    rm -rf "$_test_venv"
+                    info "venv/ensurepip not available — installing..."
                     case "$PKG_MGR" in
                         apt)
                             $SUDO apt-get update -qq
@@ -109,11 +114,13 @@ install_python() {
                         zypper) $SUDO zypper install -y "python${PY_VER/.*/}-base" 2>/dev/null || true ;;
                         apk)    $SUDO apk add python3 2>/dev/null || true ;;
                     esac
-                    if ! $PYTHON_CMD -m venv --help &>/dev/null; then
+                    if ! $PYTHON_CMD -m venv "$_test_venv" &>/dev/null; then
+                        rm -rf "$_test_venv"
                         error "Failed to install python venv module. Please run: $SUDO apt install python${PY_VER}-venv"
                     fi
                     success "venv module installed"
                 fi
+                rm -rf "$_test_venv"
                 return
             fi
         fi
