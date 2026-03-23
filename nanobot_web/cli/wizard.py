@@ -1,6 +1,7 @@
 """Interactive onboarding wizard for nanobot-web CLI."""
 
 import getpass
+import sys
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -52,14 +53,35 @@ CHANNEL_LIST = [
 ]
 
 
+def _open_tty():
+    """Open /dev/tty for reading (works even when stdin is a pipe)."""
+    try:
+        return open("/dev/tty", "r")  # noqa: SIM115
+    except OSError:
+        return None
+
+
 def _prompt(console: Console, label: str, default: str = "", secret: bool = False) -> str:
-    """Prompt user for input. Returns default if empty."""
+    """Prompt user for input. Returns default if empty.
+
+    Reads from /dev/tty when sys.stdin is not a terminal (e.g. curl | bash).
+    """
     suffix = f" [{default}]" if default else ""
     try:
         if secret:
             value = getpass.getpass(f"  {label}{suffix}: ")
         else:
-            value = input(f"  {label}{suffix}: ")
+            tty = _open_tty() if not sys.stdin.isatty() else None
+            try:
+                if tty:
+                    sys.stdout.write(f"  {label}{suffix}: ")
+                    sys.stdout.flush()
+                    value = tty.readline().rstrip("\n")
+                else:
+                    value = input(f"  {label}{suffix}: ")
+            finally:
+                if tty:
+                    tty.close()
     except (EOFError, KeyboardInterrupt):
         console.print()
         return default

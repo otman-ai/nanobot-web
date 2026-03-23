@@ -255,8 +255,19 @@ def onboard(
 
     sync_workspace_templates(workspace)
 
-    # Run interactive wizard if TTY and not skipped
-    if not skip_wizard and sys.stdin.isatty():
+    # Run interactive wizard if a terminal is available and not skipped.
+    # Check /dev/tty (not sys.stdin) because stdin may be a pipe when run
+    # via `curl ... | bash`, while /dev/tty is the real terminal that
+    # Click/typer use for prompts.
+    def _has_tty() -> bool:
+        try:
+            f = open("/dev/tty")  # noqa: SIM115
+            f.close()
+            return True
+        except OSError:
+            return sys.stdin.isatty()
+
+    if not skip_wizard and _has_tty():
         from nanobot_web.cli.wizard import apply_wizard_to_config, generate_user_md, run_wizard
 
         config = load_config()
@@ -277,7 +288,7 @@ def onboard(
     console.print(f"\n{__logo__} nanobot-web is ready!")
 
     # Offer to auto-launch web + gateway
-    if sys.stdin.isatty():
+    if _has_tty():
         console.print()
         try:
             launch = typer.confirm("Start web UI + gateway now?", default=True)
