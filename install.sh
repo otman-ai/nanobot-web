@@ -380,6 +380,20 @@ run_onboard() {
     fi
 }
 
+# ── Stop any running nanobot-web server ──────────────────────
+stop_running_server() {
+    if pgrep -f "nanobot-web web" &>/dev/null || pgrep -f "uvicorn nanobot_web" &>/dev/null; then
+        step "Stopping running nanobot-web server"
+        pkill -f "nanobot-web web" 2>/dev/null || true
+        pkill -f "uvicorn nanobot_web" 2>/dev/null || true
+        sleep 1
+        # Force kill if still running
+        pkill -9 -f "nanobot-web web" 2>/dev/null || true
+        pkill -9 -f "uvicorn nanobot_web" 2>/dev/null || true
+        success "Stopped old server"
+    fi
+}
+
 # ── Main ─────────────────────────────────────────────────────
 main() {
     echo -e "${CYAN}"
@@ -392,6 +406,7 @@ main() {
     install_python
     install_node
     setup_repo
+    stop_running_server
     setup_python_env
     build_frontend
     build_bridge
