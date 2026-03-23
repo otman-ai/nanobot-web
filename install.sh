@@ -364,7 +364,7 @@ build_bridge() {
     success "WhatsApp bridge built"
 }
 
-# ── Run onboard ─────────────────────────────────────────────
+# ── Run onboard (wizard walks through setup, then auto-launches) ──
 run_onboard() {
     step "Running onboard setup"
 
@@ -373,36 +373,12 @@ run_onboard() {
     . "$REPO_DIR/venv/bin/activate"
 
     if has nanobot-web; then
-        nanobot-web onboard 2>/dev/null || warn "Onboard may have already been run"
-        success "Workspace initialized at ~/.nanobot-web/"
+        # The onboard command now includes the full wizard (model, channels,
+        # Composio, etc.) and offers to auto-launch web+gateway at the end.
+        nanobot-web onboard || warn "Onboard may have had issues"
     else
         warn "nanobot-web command not found in PATH — try: source $REPO_DIR/venv/bin/activate"
     fi
-}
-
-# ── Print summary ───────────────────────────────────────────
-print_summary() {
-    echo ""
-    echo -e "${GREEN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
-    echo -e "${GREEN}  nanobot-web installed successfully!${NC}"
-    echo -e "${GREEN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
-    echo ""
-    echo -e "  ${CYAN}Activate the environment:${NC}"
-    echo -e "    source $REPO_DIR/venv/bin/activate"
-    echo ""
-    echo -e "  ${CYAN}Configure your API key:${NC}"
-    echo -e "    nanobot-web config set providers.openrouter.api_key sk-or-v1-YOUR_KEY"
-    echo ""
-    echo -e "  ${CYAN}Start the Web UI:${NC}"
-    echo -e "    nanobot-web web"
-    echo -e "    Then open ${BLUE}http://localhost:18790${NC}"
-    echo ""
-    echo -e "  ${CYAN}Or use the CLI:${NC}"
-    echo -e "    nanobot-web agent"
-    echo ""
-    echo -e "  ${CYAN}Check status:${NC}"
-    echo -e "    nanobot-web status"
-    echo ""
 }
 
 # ── Main ─────────────────────────────────────────────────────
@@ -421,7 +397,13 @@ main() {
     build_frontend
     build_bridge
     run_onboard
-    print_summary
+    # Onboard now handles the wizard and auto-launches web+gateway.
+    # If onboard didn't launch (e.g. non-TTY), show fallback instructions.
+    echo ""
+    echo -e "  ${CYAN}To start manually:${NC}"
+    echo -e "    source $REPO_DIR/venv/bin/activate"
+    echo -e "    nanobot-web web"
+    echo ""
 }
 
 main "$@"

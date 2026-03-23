@@ -29,6 +29,7 @@ class WizardResult:
     provider_api_key: str = ""
     model: str = ""
     brave_api_key: str = ""
+    composio_api_key: str = ""
     channels: dict = field(default_factory=dict)
     skipped: bool = False
 
@@ -87,7 +88,7 @@ def _prompt_choice(console: Console, label: str, choices: list[str], default: st
 
 def _step_user_profile(console: Console) -> dict:
     """Step 1: About You."""
-    console.print("\n[bold cyan]Step 1/5: About You[/bold cyan]")
+    console.print("\n[bold cyan]Step 1/6: About You[/bold cyan]")
     console.print("[dim]Press Enter to skip any field.[/dim]\n")
     name = _prompt(console, "Your name")
     timezone = _prompt(console, "Timezone (e.g. America/New_York, Asia/Shanghai)")
@@ -97,7 +98,7 @@ def _step_user_profile(console: Console) -> dict:
 
 def _step_work_context(console: Console) -> dict:
     """Step 2: Work Context."""
-    console.print("\n[bold cyan]Step 2/5: Work Context[/bold cyan]")
+    console.print("\n[bold cyan]Step 2/6: Work Context[/bold cyan]")
     console.print("[dim]Press Enter to skip any field.[/dim]\n")
     comm = _prompt_choice(console, "Communication style", ["Casual", "Professional", "Technical"])
     length = _prompt_choice(
@@ -121,7 +122,7 @@ def _step_work_context(console: Console) -> dict:
 
 def _step_provider(console: Console) -> dict:
     """Step 3: LLM Provider."""
-    console.print("\n[bold cyan]Step 3/5: LLM Provider[/bold cyan]")
+    console.print("\n[bold cyan]Step 3/6: LLM Provider[/bold cyan]")
     console.print("[dim]Choose your AI provider. Press Enter to skip.[/dim]\n")
 
     for i, (_, label, default_model) in enumerate(WIZARD_PROVIDERS, 1):
@@ -150,7 +151,7 @@ def _step_provider(console: Console) -> dict:
 
 def _step_channels(console: Console) -> dict:
     """Step 4: Chat Channels."""
-    console.print("\n[bold cyan]Step 4/5: Chat Channels[/bold cyan]")
+    console.print("\n[bold cyan]Step 4/6: Chat Channels[/bold cyan]")
     console.print("[dim]Enter numbers to enable (e.g. 1,3). Press Enter to skip.[/dim]\n")
 
     for i, (_, label, _fields) in enumerate(CHANNEL_LIST, 1):
@@ -183,10 +184,19 @@ def _step_channels(console: Console) -> dict:
 
 def _step_tools(console: Console) -> dict:
     """Step 5: Tool Integrations."""
-    console.print("\n[bold cyan]Step 5/5: Tool Integrations[/bold cyan]")
+    console.print("\n[bold cyan]Step 5/6: Tool Integrations[/bold cyan]")
     console.print("[dim]Press Enter to skip.[/dim]\n")
     brave_key = _prompt(console, "Brave Search API key (for web search)", secret=True)
     return {"brave_api_key": brave_key}
+
+
+def _step_composio(console: Console) -> dict:
+    """Step 6: Composio Integration."""
+    console.print("\n[bold cyan]Step 6/6: Composio Integration[/bold cyan]")
+    console.print("[dim]Composio connects 250+ apps (Gmail, GitHub, Slack, Notion, etc.)[/dim]")
+    console.print("[dim]Get your API key at https://app.composio.dev — Press Enter to skip.[/dim]\n")
+    api_key = _prompt(console, "Composio API key", secret=True)
+    return {"composio_api_key": api_key}
 
 
 def _print_summary(console: Console, result: WizardResult) -> None:
@@ -217,6 +227,8 @@ def _print_summary(console: Console, result: WizardResult) -> None:
         table.add_row("Channels", ", ".join(result.channels.keys()))
     if result.brave_api_key:
         table.add_row("Brave Search", "configured")
+    if result.composio_api_key:
+        table.add_row("Composio", "configured")
 
     console.print()
     console.print(Panel(table, title="Setup Summary", border_style="green"))
@@ -292,6 +304,9 @@ def apply_wizard_to_config(config, result: WizardResult):
     if result.brave_api_key:
         config.tools.web.search.api_key = result.brave_api_key
 
+    if result.composio_api_key:
+        config.tools.composio_api_key = result.composio_api_key
+
     for ch_name, ch_data in result.channels.items():
         ch_cfg = getattr(config.channels, ch_name, None)
         if ch_cfg is None:
@@ -340,6 +355,10 @@ def run_wizard(config, workspace: Path, console: Console) -> WizardResult:
         # Step 5: Tool Integrations
         tools = _step_tools(console)
         result.brave_api_key = tools.get("brave_api_key", "")
+
+        # Step 6: Composio Integration
+        composio = _step_composio(console)
+        result.composio_api_key = composio.get("composio_api_key", "")
 
     except KeyboardInterrupt:
         console.print("\n[yellow]Wizard interrupted. Saving what was entered so far.[/yellow]")

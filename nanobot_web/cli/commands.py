@@ -273,6 +273,26 @@ def onboard(
             console.print(f"[green]✓[/green] User profile saved to {user_path}")
 
     console.print(f"\n{__logo__} nanobot-web is ready!")
+
+    # Offer to auto-launch web + gateway
+    if sys.stdin.isatty():
+        console.print()
+        if typer.confirm("Start web UI + gateway now?", default=True):
+            console.print(f"\n{__logo__} Launching web server + gateway on port 18790...")
+            console.print("  Open [bold cyan]http://localhost:18790[/bold cyan] in your browser.\n")
+            try:
+                import uvicorn
+
+                import nanobot_web.web.server as _srv
+                _srv._run_gateway = True
+                uvicorn.run("nanobot_web.web.server:app", host="0.0.0.0", port=18790)
+            except ImportError:
+                console.print("[yellow]uvicorn not installed. Install with: pip install 'nanobot-web[web]'[/yellow]")
+                console.print("\nNext steps:")
+                console.print("  1. [cyan]pip install 'nanobot-web[web]'[/cyan]")
+                console.print("  2. [cyan]nanobot-web web[/cyan]")
+            return
+
     console.print("\nNext steps:")
     console.print("  1. Chat: [cyan]nanobot-web agent -m \"Hello!\"[/cyan]")
     console.print("  2. Edit your profile: [cyan]~/.nanobot-web/workspace/USER.md[/cyan]")
