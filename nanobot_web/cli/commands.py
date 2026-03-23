@@ -224,14 +224,42 @@ def onboard(
     from nanobot_web.config.loader import get_config_path, load_config, save_config
     from nanobot_web.config.schema import Config
 
+    def _has_tty() -> bool:
+        try:
+            f = open("/dev/tty")  # noqa: SIM115
+            f.close()
+            return True
+        except OSError:
+            return sys.stdin.isatty()
+
+    def _tty_confirm(prompt: str, default: bool = True) -> bool:
+        """Confirm prompt that reads from /dev/tty (works under curl | bash)."""
+        suffix = " [Y/n]: " if default else " [y/N]: "
+        try:
+            tty = open("/dev/tty", "r")  # noqa: SIM115
+        except OSError:
+            tty = None
+        try:
+            sys.stdout.write(prompt + suffix)
+            sys.stdout.flush()
+            if tty:
+                answer = tty.readline().strip().lower()
+            else:
+                answer = input().strip().lower()
+        except (EOFError, KeyboardInterrupt):
+            return False
+        finally:
+            if tty:
+                tty.close()
+        if not answer:
+            return default
+        return answer in ("y", "yes")
+
     config_path = get_config_path()
 
     if config_path.exists():
         console.print(f"[dim]Config found at {config_path} — keeping existing values, adding new fields.[/dim]")
-        try:
-            overwrite = typer.confirm("Reset to defaults instead?", default=False)
-        except (typer.Abort, KeyboardInterrupt):
-            overwrite = False
+        overwrite = _tty_confirm("Reset to defaults instead?", default=False)
         if overwrite:
             config = Config()
             save_config(config)
@@ -254,18 +282,6 @@ def onboard(
         console.print(f"[green]✓[/green] Created workspace at {workspace}")
 
     sync_workspace_templates(workspace)
-
-    # Run interactive wizard if a terminal is available and not skipped.
-    # Check /dev/tty (not sys.stdin) because stdin may be a pipe when run
-    # via `curl ... | bash`, while /dev/tty is the real terminal that
-    # Click/typer use for prompts.
-    def _has_tty() -> bool:
-        try:
-            f = open("/dev/tty")  # noqa: SIM115
-            f.close()
-            return True
-        except OSError:
-            return sys.stdin.isatty()
 
     if not skip_wizard and _has_tty():
         from nanobot_web.cli.wizard import apply_wizard_to_config, generate_user_md, run_wizard
@@ -290,10 +306,7 @@ def onboard(
     # Offer to auto-launch web + gateway
     if _has_tty():
         console.print()
-        try:
-            launch = typer.confirm("Start web UI + gateway now?", default=True)
-        except (typer.Abort, KeyboardInterrupt):
-            launch = False
+        launch = _tty_confirm("Start web UI + gateway now?", default=True)
         if launch:
             console.print(f"\n{__logo__} Launching web server + gateway on port 18790...")
             console.print("  Open [bold cyan]http://localhost:18790[/bold cyan] in your browser.\n")
