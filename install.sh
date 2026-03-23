@@ -96,6 +96,24 @@ install_python() {
             if version_ge "$PY_VER" "3.11"; then
                 PYTHON_CMD="$cmd"
                 success "Found $cmd (Python $PY_VER)"
+                # Ensure venv module is available (may not be installed by default)
+                if ! $PYTHON_CMD -m venv --help &>/dev/null; then
+                    info "venv module not found — installing..."
+                    case "$PKG_MGR" in
+                        apt)
+                            $SUDO apt-get update -qq
+                            $SUDO apt-get install -y "python${PY_VER}-venv" 2>/dev/null \
+                                || $SUDO apt-get install -y python3-venv
+                            ;;
+                        dnf)    $SUDO dnf install -y "python${PY_VER/.*/}-libs" 2>/dev/null || true ;;
+                        zypper) $SUDO zypper install -y "python${PY_VER/.*/}-base" 2>/dev/null || true ;;
+                        apk)    $SUDO apk add python3 2>/dev/null || true ;;
+                    esac
+                    if ! $PYTHON_CMD -m venv --help &>/dev/null; then
+                        error "Failed to install python venv module. Please run: $SUDO apt install python${PY_VER}-venv"
+                    fi
+                    success "venv module installed"
+                fi
                 return
             fi
         fi
