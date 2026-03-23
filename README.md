@@ -100,19 +100,61 @@ All features from [nanobot](https://github.com/HKUDS/nanobot) are included:
 
 ## Install
 
-**From source (recommended)**
+### One-Command Install (recommended)
 
+Automatically detects your OS (Ubuntu/Debian, Fedora, Arch, macOS, Alpine, etc.), installs Python 3.11+, Node.js 20+, creates a virtual environment, installs all packages, builds the frontend & WhatsApp bridge, and runs onboard — all in one go.
+
+**Option A — already cloned the repo:**
 ```bash
 git clone https://github.com/otman-ai/nanobot-web.git
 cd nanobot-web
-pip install -e ".[web]"
+./install.sh
 ```
 
-**From PyPI**
+**Option B — install from anywhere (curl):**
+```bash
+curl -sSL https://raw.githubusercontent.com/otman-ai/nanobot-web/main/install.sh | bash
+```
 
+The installer handles everything:
+
+| Step | What it does |
+|------|-------------|
+| OS detection | Identifies your distro and package manager |
+| Python 3.11+ | Installs via apt/dnf/pacman/brew/etc. or deadsnakes PPA |
+| Node.js 20+ | Installs via NodeSource, brew, or nvm fallback |
+| Virtual environment | Creates `venv/` and installs all Python dependencies |
+| Frontend build | Runs `npm install` + `npm run build` in `frontend/` |
+| WhatsApp bridge | Runs `npm install` + `npm run build` in `bridge/` |
+| Onboard | Initializes `~/.nanobot-web/` config and workspace |
+
+After install, activate the venv and start:
+```bash
+source venv/bin/activate
+nanobot-web web
+```
+
+### Manual Install
+
+<details>
+<summary>Click to expand manual steps</summary>
+
+**From source:**
+```bash
+git clone https://github.com/otman-ai/nanobot-web.git
+cd nanobot-web
+python3 -m venv venv && source venv/bin/activate
+pip install -e ".[web]"
+cd frontend && npm install && npm run build && cd ..
+nanobot-web onboard
+```
+
+**From PyPI:**
 ```bash
 pip install "nanobot-web[web]"
+nanobot-web onboard
 ```
+</details>
 
 ## Quick Start
 
