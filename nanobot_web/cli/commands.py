@@ -315,7 +315,7 @@ def onboard(
 
                 import nanobot_web.web.server as _srv
                 _srv._run_gateway = True
-                uvicorn.run("nanobot_web.web.server:app", host="0.0.0.0", port=18790)
+                uvicorn.run("nanobot_web.web.server:app", host="127.0.0.1", port=18790)
             except ImportError:
                 console.print("[yellow]uvicorn not installed. Install with: pip install 'nanobot-web[web]'[/yellow]")
                 console.print("\nNext steps:")
