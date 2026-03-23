@@ -308,19 +308,32 @@ def onboard(
         console.print()
         launch = _tty_confirm("Start web UI + gateway now?", default=True)
         if launch:
-            console.print(f"\n{__logo__} Launching web server + gateway on port 18790...")
-            console.print("  Open [bold cyan]http://localhost:18790[/bold cyan] in your browser.\n")
-            try:
-                import uvicorn
+            import shutil
+            import subprocess
 
-                import nanobot_web.web.server as _srv
-                _srv._run_gateway = True
-                uvicorn.run("nanobot_web.web.server:app", host="127.0.0.1", port=18790)
-            except ImportError:
-                console.print("[yellow]uvicorn not installed. Install with: pip install 'nanobot-web[web]'[/yellow]")
-                console.print("\nNext steps:")
-                console.print("  1. [cyan]pip install 'nanobot-web[web]'[/cyan]")
-                console.print("  2. [cyan]nanobot-web web[/cyan]")
+            nanobot_bin = shutil.which("nanobot-web")
+            if not nanobot_bin:
+                console.print("[yellow]nanobot-web not found in PATH. Start manually:[/yellow]")
+                console.print("  [cyan]nanobot-web web[/cyan]")
+                return
+
+            log_dir = Path.home() / ".nanobot-web" / "logs"
+            log_dir.mkdir(parents=True, exist_ok=True)
+            log_file = log_dir / "web.log"
+
+            with open(log_file, "a") as lf:
+                proc = subprocess.Popen(
+                    [nanobot_bin, "web", "--host", "127.0.0.1", "--port", "18790"],
+                    stdout=lf,
+                    stderr=lf,
+                    stdin=subprocess.DEVNULL,
+                    start_new_session=True,
+                )
+
+            console.print(f"\n{__logo__} Web server + gateway started in background (PID {proc.pid})")
+            console.print(f"  Open [bold cyan]http://localhost:18790[/bold cyan] in your browser.")
+            console.print(f"  Logs: [dim]{log_file}[/dim]")
+            console.print(f"\n  To stop: [cyan]kill {proc.pid}[/cyan]")
             return
 
     console.print("\nNext steps:")
