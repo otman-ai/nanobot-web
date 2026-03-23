@@ -227,17 +227,19 @@ def onboard(
     config_path = get_config_path()
 
     if config_path.exists():
-        console.print(f"[yellow]Config already exists at {config_path}[/yellow]")
-        console.print("  [bold]y[/bold] = overwrite with defaults (existing values will be lost)")
-        console.print("  [bold]N[/bold] = refresh config, keeping existing values and adding new fields")
-        if typer.confirm("Overwrite?"):
+        console.print(f"[dim]Config found at {config_path} — keeping existing values, adding new fields.[/dim]")
+        try:
+            overwrite = typer.confirm("Reset to defaults instead?", default=False)
+        except (typer.Abort, KeyboardInterrupt):
+            overwrite = False
+        if overwrite:
             config = Config()
             save_config(config)
             console.print(f"[green]✓[/green] Config reset to defaults at {config_path}")
         else:
             config = load_config()
             save_config(config)
-            console.print(f"[green]✓[/green] Config refreshed at {config_path} (existing values preserved)")
+            console.print(f"[green]✓[/green] Config refreshed at {config_path}")
     else:
         save_config(Config())
         console.print(f"[green]✓[/green] Created config at {config_path}")
@@ -277,7 +279,11 @@ def onboard(
     # Offer to auto-launch web + gateway
     if sys.stdin.isatty():
         console.print()
-        if typer.confirm("Start web UI + gateway now?", default=True):
+        try:
+            launch = typer.confirm("Start web UI + gateway now?", default=True)
+        except (typer.Abort, KeyboardInterrupt):
+            launch = False
+        if launch:
             console.print(f"\n{__logo__} Launching web server + gateway on port 18790...")
             console.print("  Open [bold cyan]http://localhost:18790[/bold cyan] in your browser.\n")
             try:
