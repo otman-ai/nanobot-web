@@ -782,17 +782,21 @@ def disconnect_integration(req: IntegrationDisconnectRequest):
             acct_id = getattr(acct, "id", None)
             if acct_id:
                 try:
-                    # Composio SDK: delete the connected account
-                    toolset.client.connected_accounts.remove(id=acct_id)
-                except AttributeError:
-                    # Fallback: try alternative API paths
-                    try:
-                        toolset.client.http_client.delete(f"/v1/connectedAccounts/{acct_id}")
-                    except Exception as exc:
+                    response = toolset.client.http.delete(
+                        url=f"/v1/connectedAccounts/{acct_id}",
+                    )
+                    if hasattr(response, "status_code") and response.status_code >= 400:
                         raise HTTPException(
-                            status_code=500,
-                            detail=f"Failed to disconnect {req.toolkit}: {exc}",
-                        ) from exc
+                            status_code=response.status_code,
+                            detail=f"Composio API error disconnecting {req.toolkit}",
+                        )
+                except HTTPException:
+                    raise
+                except Exception as exc:
+                    raise HTTPException(
+                        status_code=500,
+                        detail=f"Failed to disconnect {req.toolkit}: {exc}",
+                    ) from exc
             deleted = True
             break
     if not deleted:
