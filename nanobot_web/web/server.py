@@ -236,6 +236,10 @@ class IntegrationConnectRequest(BaseModel):
     toolkit: str
 
 
+class IntegrationDisconnectRequest(BaseModel):
+    toolkit: str
+
+
 class CronJobEnableRequest(BaseModel):
     job_id: str
     enabled: bool = True
@@ -765,6 +769,35 @@ def connect_integration(req: IntegrationConnectRequest):
     conn_request = toolset.initiate_connection(app=req.toolkit)
     url = getattr(conn_request, "redirectUrl", None) or getattr(conn_request, "redirect_url", None)
     return {"status": "link", "toolkit": req.toolkit, "url": url}
+
+
+@app.post("/api/integrations/disconnect")
+def disconnect_integration(req: IntegrationDisconnectRequest):
+    """Disconnect (delete) a Composio connected account for the given toolkit."""
+    toolset = _get_composio_toolset()
+    deleted = False
+    for acct in toolset.get_connected_accounts():
+        app_name = getattr(acct, "appUniqueId", None) or getattr(acct, "app_unique_id", None) or ""
+        if app_name == req.toolkit:
+            acct_id = getattr(acct, "id", None)
+            if acct_id:
+                try:
+                    # Composio SDK: delete the connected account
+                    toolset.client.connected_accounts.remove(id=acct_id)
+                except AttributeError:
+                    # Fallback: try alternative API paths
+                    try:
+                        toolset.client.http_client.delete(f"/v1/connectedAccounts/{acct_id}")
+                    except Exception as exc:
+                        raise HTTPException(
+                            status_code=500,
+                            detail=f"Failed to disconnect {req.toolkit}: {exc}",
+                        ) from exc
+            deleted = True
+            break
+    if not deleted:
+        raise HTTPException(status_code=404, detail=f"{req.toolkit} is not connected")
+    return {"status": "disconnected", "toolkit": req.toolkit}
 
 
 @app.get("/api/cron/jobs")

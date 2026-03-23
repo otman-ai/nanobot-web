@@ -21,6 +21,7 @@ import { Switch } from "./components/ui/switch";
 import { Textarea } from "./components/ui/textarea";
 import {
   connectIntegration,
+  disconnectIntegration,
   createCronJob,
   createSkill,
   deleteKnowledgeFile,
@@ -173,6 +174,7 @@ export default function App() {
   const [apiKeyInputs, setApiKeyInputs] = useState({});
   const [apiKeySaving, setApiKeySaving] = useState(null);
   const [connecting, setConnecting] = useState(null);
+  const [disconnecting, setDisconnecting] = useState(null);
   const [tasks, setTasks] = useState([]);
   const [tasksStatus, setTasksStatus] = useState(null);
   const [tasksError, setTasksError] = useState("");
@@ -1020,6 +1022,23 @@ export default function App() {
     }
   };
 
+  const handleDisconnectIntegration = async (toolkit) => {
+    setDisconnecting(toolkit);
+    setIntegrationsError("");
+    try {
+      await disconnectIntegration(toolkit);
+      setIntegrations((prev) => ({
+        ...prev,
+        connected: (prev.connected || []).filter((id) => id !== toolkit),
+      }));
+      await loadIntegrations();
+    } catch (err) {
+      setIntegrationsError(err.message || "Failed to disconnect integration");
+    } finally {
+      setDisconnecting(null);
+    }
+  };
+
   return (
     <div className="h-screen w-full px-6 py-6 overflow-hidden">
       <div className="flex h-full w-full gap-6">
@@ -1411,14 +1430,31 @@ export default function App() {
                                 <p className="font-medium text-ink">{toolkit.label || toolkit.id}</p>
                                 <p className="text-xs text-smoked">{toolkit.slug || toolkit.id}</p>
                               </div>
-                              <Button
-                                variant={connected ? "outline" : "accent"}
-                                size="sm"
-                                disabled={!integrations.hasApiKey || connected || connecting === toolkit.id}
-                                onClick={() => handleConnectIntegration(toolkit.id)}
-                              >
-                                {connected ? "Connected" : connecting === toolkit.id ? "Connecting..." : "Connect"}
-                              </Button>
+                              <div className="flex items-center gap-2">
+                                {connected && (
+                                  <span className="text-xs text-green-600 font-medium">Connected</span>
+                                )}
+                                {connected ? (
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    disabled={disconnecting === toolkit.id}
+                                    onClick={() => handleDisconnectIntegration(toolkit.id)}
+                                    className="text-red-600 border-red-200 hover:bg-red-50"
+                                  >
+                                    {disconnecting === toolkit.id ? "Disconnecting..." : "Disconnect"}
+                                  </Button>
+                                ) : (
+                                  <Button
+                                    variant="accent"
+                                    size="sm"
+                                    disabled={!integrations.hasApiKey || connecting === toolkit.id}
+                                    onClick={() => handleConnectIntegration(toolkit.id)}
+                                  >
+                                    {connecting === toolkit.id ? "Connecting..." : "Connect"}
+                                  </Button>
+                                )}
+                              </div>
                             </div>
                           );
                         })}

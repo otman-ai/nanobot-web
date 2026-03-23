@@ -135,6 +135,19 @@ export async function connectIntegration(toolkit) {
   return res.json();
 }
 
+export async function disconnectIntegration(toolkit) {
+  const res = await fetch("/api/integrations/disconnect", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ toolkit })
+  });
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    throw new Error(body.detail || `Integration disconnect failed: ${res.status}`);
+  }
+  return res.json();
+}
+
 // ---------------------------------------------------------------------------
 // Cron
 // ---------------------------------------------------------------------------
